@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Никита и Анна — 26.12.2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <script>
+    // ==========================================
+    // НАСТРОЙКИ САЙТА (можно менять в Блокноте)
+    // ==========================================
+    const CONFIG = {
+      groom: "Никита Шинкевич",
+      bride: "Анна Болотина",
+      shortNames: "Никита & Анна",
+      dateDisplay: "26 декабря 2026",
+      dateISO: "2026-12-26T12:00:00", // Для таймера обратного отсчета
+      gatherTime: "11:45",
+      ceremonyTime: "12:00",
+      locationTitle: "Музей-заповедник «Царицыно»",
+      locationHall: "Оперный дом (Средний дворец)",
+      locationAddress: "г. Москва, ул. Дольская, д. 1, стр. 6",
+      yandexMapsUrl: "https://yandex.ru/maps/?text=Москва,+Царицыно,+Оперный+дом",
+      
+      // Имена ваших файлов (должны лежать в той же папке, что и index.html)
+      mapImageFile: "map.jpg",     // Картинка со схемой парковки и места встречи
+      musicFile: "music.mp3",      // Аудиофайл с фоновой музыкой
+      
+      // Включить падающий снег на фоне (true / false)
+      enableSnow: true
+    };
+  </script>
+
+  <style>
+    :root {
+      --bg: #F9F7F3;
+      --card: #FFFFFF;
+      --text: #222624;
+      --muted: #666E6A;
+      --accent: #1E463A;      /* Глубокий хвойный */
+      --accent-hover: #143128;
+      --gold: #B89768;        /* Приглушенное золото */
+      --border: #E5E0D6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      font-weight: 300;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, .serif {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 400;
+    }
+
+    #snow-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 40px 20px 100px;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Главный экран */
+    .hero {
+      text-align: center;
+      padding: 50px 20px 40px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      font-size: 12px;
+      color: var(--gold);
+      font-weight: 500;
+      margin-bottom: 18px;
+    }
+
+    .hero h1 {
+      font-size: clamp(42px, 8vw, 64px);
+      line-height: 1.1;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .hero .full-names {
+      font-size: 15px;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      margin-bottom: 28px;
+    }
+
+    .date-badge {
+      display: inline-block;
+      padding: 10px 26px;
+      border: 1px solid var(--gold);
+      border-radius: 50px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    /* Обратный отсчет */
+    .countdown {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 32px;
+    }
+
+    .cd-item {
+      text-align: center;
+      min-width: 60px;
+    }
+
+    .cd-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .cd-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* Карточки секций */
+    .section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px 32px;
+      margin-top: 28px;
+      box-shadow: 0 10px 30px rgba(30, 70, 58, 0.03);
+    }
+
+    .section h2 {
+      font-size: 34px;
+      color: var(--accent);
+      text-align: center;
+      margin-bottom: 18px;
+      line-height: 1.2;
+    }
+
+    .invite-text {
+      text-align: center;
+      font-size: 16px;
+      color: var(--text);
+    }
+
+    .invite-text p + p {
+      margin-top: 14px;
+    }
+
+    .note-box {
+      margin-top: 22px;
+      padding: 16px 20px;
+      background: var(--bg);
+      border-left: 3px solid var(--gold);
+      border-radius: 0 8px 8px 0;
+      font-size: 14px;
+      color: var(--muted);
+      text-align: left;
+    }
+
+    /* Тайминг */
+    .timeline {
+      margin-top: 10px;
+    }
+
+    .tl-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      padding: 16px 0;
+      border-bottom: 1px dashed var(--border);
+    }
+
+    .tl-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .tl-time {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--accent);
+      min-width: 75px;
+      line-height: 1.1;
+    }
+
+    .tl-desc h3 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .tl-desc p {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    /* Карта и схема */
+    .location-info {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .location-info strong {
+      font-weight: 500;
+      display: block;
+      font-size: 17px;
+    }
+
+    .location-info span {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .map-wrapper {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      text-align: center;
+    }
+
+    .map-wrapper img {
+      width: 100%;
+      height: auto;
+      display: block;
+      cursor: zoom-in;
+      transition: transform 0.3s ease;
+    }
+
+    .map-wrapper img:hover {
+      transform: scale(1.01);
+    }
+
+    .map-fallback {
+      padding: 40px 20px;
+      color: var(--muted);
+      font-size: 14px;
+      display: none;
+    }
+
+    .map-hint {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 22px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 400;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      border: 1px solid var(--accent);
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--accent);
+    }
+
+    .btn-outline:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* Форма RSVP */
+    .rsvp-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 10px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 15px;
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+      border-color: var(--accent);
+      background: #fff;
+    }
+
+    .radio-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .radio-option {
+      position: relative;
+    }
+
+    .radio-option input {
+      position: absolute;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .radio-card {
+      display: block;
+      text-align: center;
+      padding: 14px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .radio-option input:checked + .radio-card {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+      font-weight: 500;
+    }
+
+    .form-success {
+      display: none;
+      text-align: center;
+      padding: 24px;
+      background: var(--bg);
+      border-radius: 12px;
+      color: var(--accent);
+    }
+
+    /* Плавающая кнопка музыки */
+    .music-btn {
+      position: fixed;
+      bottom: 22px;
+      right: 22px;
+      z-index: 50;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(30, 70, 58, 0.25);
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .music-btn:hover {
+      transform: translateY(-2px);
+      background: var(--accent-hover);
+    }
+
+    .bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 14px;
+    }
+
+    .bar {
+      width: 3px;
+      height: 4px;
+      background: var(--gold);
+      border-radius: 2px;
+      transition: height 0.2s;
+    }
+
+    .music-btn.playing .bar {
+      animation: sound 0.8s infinite ease-in-out alternate;
+    }
+    .music-btn.playing .bar:nth-child(2) { animation-delay: 0.2s; }
+    .music-btn.playing .bar:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes sound {
+      0% { height: 4px; }
+      100% { height: 14px; }
+    }
+
+    /* Модальное окно для увеличения карты */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      cursor: zoom-out;
+    }
+
+    .modal img {
+      max-width: 100%;
+      max-height: 90vh;
+      border-radius: 8px;
+    }
+
+    @media (max-width: 520px) {
+      .section { padding: 28px 20px; }
+      .radio-group { grid-template-columns: 1fr; }
+      .tl-row { flex-direction: column; gap: 4px; }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="snow-canvas"></canvas>
+
+  <div class="container">
+    <!-- Шапка -->
+    <header class="hero">
+      <div class="eyebrow">Приглашение на роспись</div>
+      <h1 id="hero-names">Никита &amp; Анна</h1>
+      <div class="full-names" id="hero-full-names">Никита Шинкевич и Анна Болотина</div>
+      <div class="date-badge" id="hero-date">26 декабря 2026</div>
+
+      <div class="countdown" id="countdown">
+        <div class="cd-item"><div class="cd-num" id="cd-days">00</div><div class="cd-label">дней</div></div>
+        <div class="cd-item"><div class="cd-num" id="cd-hours">00</div><div class="cd-label">часов</div></div>
+        <div class="cd-item"><div class="cd-num" id="cd-mins">00</div><div class="cd-label">минут</div></div>
+      </div>
+    </header>
+
+    <!-- Текст приглашения -->
+    <section class="section">
+      <h2 id="guest-greeting">Дорогие друзья и близкие!</h2>
+      <div class="invite-text">
+        <p>26 декабря мы официально станем семьёй. Мы решили отметить этот день камерно и без суеты — проведём только торжественную регистрацию в Царицыно и небольшую прогулку с фотографиями сразу после.</p>
+        <p>Если у вас будет время и желание разделить с нами этот момент, обняться и сделать пару кадров на память — мы будем очень рады вас видеть!</p>
+        
+        <div class="note-box">
+          <strong>Важно:</strong> банкета и застолья не планируется. Пожалуйста, не беспокойтесь о подарках и цветах — для нас главным подарком станет само ваше присутствие. Приходите исключительно по желанию и без всяких обязательств.
+        </div>
+      </div>
+    </section>
+
+    <!-- Тайминг -->
+    <section class="section">
+      <h2>План дня</h2>
+      <div class="timeline">
+        <div class="tl-row">
+          <div class="tl-time" id="time-gather">11:45</div>
+          <div class="tl-desc">
+            <h3>Сбор гостей</h3>
+            <p>Встречаемся у входа в Оперный дом (Средний дворец), чтобы спокойно раздеться и настроиться.</p>
+          </div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-time" id="time-ceremony">12:00</div>
+          <div class="tl-desc">
+            <h3>Торжественная роспись</h3>
+            <p>Официальная церемония регистрации брака в зале Оперного дома.</p>
+          </div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-time">12:30</div>
+          <div class="tl-desc">
+            <h3>Общие фотографии</h3>
+            <p>Небольшая фотосессия с гостями в интерьерах или на территории зимнего парка, после чего каждый свободен по своим планам.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-outline" id="add-calendar-btn">Добавить в календарь (.ics)</button>
+      </div>
+    </section>
+
+    <!-- Место и карта парковки -->
+    <section class="section">
+      <h2>Как добраться</h2>
+      <div class="location-info">
+        <strong id="loc-title">Музей-заповедник «Царицыно»</strong>
+        <span id="loc-hall">Оперный дом (Средний дворец)</span><br>
+        <span id="loc-address">г. Москва, ул. Дольская, д. 1, стр. 6</span>
+      </div>
+
+      <div class="map-wrapper">
+        <img id="parking-map" src="" alt="Схема парковки и места встречи" />
+        <div class="map-fallback" id="map-fallback">
+          Здесь отобразится схема парковки и маршрута.<br>
+          Положите файл картинки рядом с <code>index.html</code> и укажите его имя в настройках.
+        </div>
+      </div>
+      <div class="map-hint" id="map-hint">Нажмите на схему, чтобы открыть её крупнее</div>
+
+      <div class="btn-group">
+        <a id="yandex-link" href="#" target="_blank" rel="noopener" class="btn btn-primary">Открыть в Яндекс.Картах</a>
+      </div>
+    </section>
+
+    <!-- Анкета гостя (Netlify Forms) -->
+    <section class="section">
+      <h2>Подскажите, ждать ли вас?</h2>
+      <p style="text-align: center; font-size: 14px; color: var(--muted); margin-bottom: 20px;">
+        Отметьтесь, пожалуйста, чтобы мы примерно понимали, сколько нас соберётся.
+      </p>
+
+      <form class="rsvp-form" name="wedding-rsvp" method="POST" data-netlify="true" id="rsvp-form">
+        <input type="hidden" name="form-name" value="wedding-rsvp" />
+        
+        <div class="form-group">
+          <label for="guest-name">Ваше имя и фамилия (или имена, если будете парой)</label>
+          <input class="form-control" type="text" id="guest-name" name="name" placeholder="Например: Иван Иванов" required />
+        </div>
+
+        <div class="form-group">
+          <label>Планируете прийти?</label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="attendance" value="Да, приду на роспись" required checked />
+              <span class="radio-card">Да, с радостью приду</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="attendance" value="К сожалению, не смогу" />
+              <span class="radio-card">К сожалению, не смогу</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="guest-note">Комментарий (по желанию)</label>
+          <input class="form-control" type="text" id="guest-note" name="comment" placeholder="Например: буду на машине / подойду ровно к 12:00" />
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 6px;">Отправить ответ</button>
+      </form>
+
+      <div class="form-success" id="form-success">
+        <h3 style="font-size: 26px; margin-bottom: 6px;">Спасибо, ответ записан!</h3>
+        <p style="font-size: 14px;">Если планы изменятся — просто напишите нам лично.</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- Аудиоплеер -->
+  <audio id="bg-music" loop preload="auto"></audio>
+  <button class="music-btn" id="music-toggle" title="Включить или выключить музыку">
+    <div class="bars">
+      <div class="bar"></div>
+      <div class="bar"></div>
+      <div class="bar"></div>
+    </div>
+    <span id="music-label">Музыка</span>
+  </button>
+
+  <!-- Модальное окно для карты -->
+  <div class="modal" id="img-modal">
+    <img id="modal-img" src="" alt="Схема крупно" />
+  </div>
+
+  <script>
+    // 1. Применение настроек из CONFIG
+    document.getElementById('hero-names').textContent = CONFIG.shortNames;
+    document.getElementById('hero-full-names').textContent = `${CONFIG.groom} и ${CONFIG.bride}`;
+    document.getElementById('hero-date').textContent = CONFIG.dateDisplay;
+    document.getElementById('time-gather').textContent = CONFIG.gatherTime;
+    document.getElementById('time-ceremony').textContent = CONFIG.ceremonyTime;
+    document.getElementById('loc-title').textContent = CONFIG.locationTitle;
+    document.getElementById('loc-hall').textContent = CONFIG.locationHall;
+    document.getElementById('loc-address').textContent = CONFIG.locationAddress;
+    document.getElementById('yandex-link').href = CONFIG.yandexMapsUrl;
+
+    // 2. Персонализация по параметру ?guest=Имя в ссылке
+    const urlParams = new URLSearchParams(window.location.search);
+    const guestParam = urlParams.get('guest');
+    if (guestParam) {
+      document.getElementById('guest-greeting').textContent = `Дорогие ${guestParam}!`;
+      document.getElementById('guest-name').value = guestParam;
+    }
+
+    // 3. Обработка картинки карты
+    const mapImg = document.getElementById('parking-map');
+    const mapFallback = document.getElementById('map-fallback');
+    const mapHint = document.getElementById('map-hint');
+    mapImg.src = CONFIG.mapImageFile;
+    mapImg.onerror = () => {
+      mapImg.style.display = 'none';
+      mapHint.style.display = 'none';
+      mapFallback.style.display = 'block';
+    };
+
+    // Увеличение схемы по клику
+    const modal = document.getElementById('img-modal');
+    const modalImg = document.getElementById('modal-img');
+    mapImg.addEventListener('click', () => {
+      modalImg.src = mapImg.src;
+      modal.style.display = 'flex';
+    });
+    modal.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+
+    // 4. Музыкальный плеер
+    const audio = document.getElementById('bg-music');
+    const musicBtn = document.getElementById('music-toggle');
+    const musicLabel = document.getElementById('music-label');
+    audio.src = CONFIG.musicFile;
+
+    let isPlaying = false;
+    musicBtn.addEventListener('click', () => {
+      if (isPlaying) {
+        audio.pause();
+        musicBtn.classList.remove('playing');
+        musicLabel.textContent = 'Музыка';
+      } else {
+        audio.play().then(() => {
+          musicBtn.classList.add('playing');
+          musicLabel.textContent = 'Пауза';
+        }).catch(() => {
+          alert('Не удалось запустить аудио. Убедитесь, что файл ' + CONFIG.musicFile + ' добавлен в папку с сайтом.');
+        });
+      }
+      isPlaying = !isPlaying;
+    });
+
+    // 5. Таймер обратного отсчета
+    const targetDate = new Date(CONFIG.dateISO).getTime();
+    function updateCountdown() {
+      const now = new Date().getTime();
+      const diff = targetDate - now;
+      if (diff <= 0) {
+        document.getElementById('countdown').innerHTML = '<div class="serif" style="font-size: 24px; color: var(--accent);">Этот день настал!</div>';
+        return;
+      }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const mins = Math.floor((diff / 1000 / 60) % 60);
+
+      document.getElementById('cd-days').textContent = String(days).padStart(2, '0');
+      document.getElementById('cd-hours').textContent = String(hours).padStart(2, '0');
+      document.getElementById('cd-mins').textContent = String(mins).padStart(2, '0');
+    }
+    updateCountdown();
+    setInterval(updateCountdown, 30000);
+
+    // 6. Генерация файла календаря (.ics)
+    document.getElementById('add-calendar-btn').addEventListener('click', () => {
+      const icsContent = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Wedding Invite//RU',
+        'BEGIN:VEVENT',
+        'DTSTART:20261226T084500Z', // 11:45 MSK (UTC+3)
+        'DTEND:20261226T100000Z',   // 13:00 MSK (UTC+3)
+        'SUMMARY:Роспись: Никита и Анна',
+        'DESCRIPTION:Встреча гостей в 11:45, роспись в 12:00. Царицыно, Оперный дом.',
+        'LOCATION:Москва, ул. Дольская, д. 1, стр. 6 (Царицыно, Оперный дом)',
+        'END:VEVENT',
+        'END:VCALENDAR'
+      ].join('\r\n');
+
+      const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'nikita-anna-wedding.ics';
+      link.click();
+    });
+
+    // 7. Отправка формы без перезагрузки страницы (совместимо с Netlify Forms)
+    const form = document.getElementById('rsvp-form');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(formData).toString()
+      })
+      .then(() => {
+        form.style.display = 'none';
+        document.getElementById('form-success').style.display = 'block';
+      })
+      .catch(() => {
+        // Если открыто локально на компьютере без Netlify
+        form.style.display = 'none';
+        document.getElementById('form-success').style.display = 'block';
+      });
+    });
+
+    // 8. Анимация легкого снега на фоне
+    if (CONFIG.enableSnow) {
+      const canvas = document.getElementById('snow-canvas');
+      const ctx = canvas.getContext('2d');
+      let width = canvas.width = window.innerWidth;
+      let height = canvas.height = window.innerHeight;
+
+      window.addEventListener('resize', () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      });
+
+      const flakes = Array.from({ length: 45 }, () => ({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        r: Math.random() * 2.5 + 1,
+        d: Math.random() * 0.6 + 0.2,
+        drift: Math.random() * 0.5 - 0.25
+      }));
+
+      function drawSnow() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = 'rgba(184, 151, 104, 0.35)'; // Легкие золотисто-снежные точки
+        ctx.beginPath();
+        for (const f of flakes) {
+          ctx.moveTo(f.x, f.y);
+          ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+        }
+        ctx.fill();
+
+        for (const f of flakes) {
+          f.y += f.d;
+          f.x += f.drift;
+          if (f.y > height) { f.y = -5; f.x = Math.random() * width; }
+          if (f.x > width) f.x = 0;
+          if (f.x < 0) f.x = width;
+        }
+        requestAnimationFrame(drawSnow);
+      }
+      drawSnow();
+    }
+  </script>
+</body>
+</html>
