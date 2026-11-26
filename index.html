@@ -17,33 +17,46 @@
       bride: "Анна Болотина",
       shortNames: "Никита & Анна",
       dateDisplay: "26 декабря 2026",
-      dateISO: "2026-12-26T12:00:00", // Для таймера обратного отсчета
+      dateISO: "2026-12-26T12:00:00",
       gatherTime: "11:45",
       ceremonyTime: "12:00",
       locationTitle: "Музей-заповедник «Царицыно»",
       locationHall: "Оперный дом (Средний дворец)",
       locationAddress: "г. Москва, ул. Дольская, д. 1, стр. 6",
       yandexMapsUrl: "https://yandex.ru/maps/?text=Москва,+Царицыно,+Оперный+дом",
-      
-      // Имена ваших файлов (должны лежать в той же папке, что и index.html)
-      mapImageFile: "map.jpg",     // Картинка со схемой парковки и места встречи
-      musicFile: "music.mp3",      // Аудиофайл с фоновой музыкой
-      
+
+      // Имена файлов (должны лежать в той же папке, что и index.html)
+      bgImageFile: "bg.jpg",          // Большая картинка на весь фон
+      groomImageFile: "groom.png",    // Вырезанный человек без фона (жених, PNG с прозрачностью)
+      brideImageFile: "bride.png",    // Вырезанный человек без фона (невеста, PNG с прозрачностью)
+      mapImageFile: "map.jpg",        // Схема парковки и места встречи
+      musicFile: "music.mp3",         // Аудиофайл с фоновой музыкой
+
+      // Высота персонажей в пикселях (увеличена примерно в 1.5 раза)
+      groomHeightDesktop: 192,
+      brideHeightDesktop: 192,
+      groomHeightMobile: 156,
+      brideHeightMobile: 156,
+
       // Включить падающий снег на фоне (true / false)
-      enableSnow: true
+      enableSnow: true,
+
+      // Ссылка веб-приложения Google Apps Script (заканчивается на /exec)
+      googleScriptUrl: "ВСТАВЬТЕ_СЮДА_ВАШУ_ССЫЛКУ_ИЗ_GOOGLE"
     };
   </script>
 
   <style>
     :root {
-      --bg: #F9F7F3;
-      --card: #FFFFFF;
-      --text: #222624;
-      --muted: #666E6A;
-      --accent: #1E463A;      /* Глубокий хвойный */
+      --card: rgba(255, 255, 255, 0.9);
+      --card-solid: #FFFFFF;
+      --text: #1F2421;
+      --muted: #5C6560;
+      --accent: #1E463A;
       --accent-hover: #143128;
-      --gold: #B89768;        /* Приглушенное золото */
-      --border: #E5E0D6;
+      --gold: #B89768;
+      --border: rgba(30, 70, 58, 0.14);
+      --soft-bg: rgba(249, 247, 243, 0.85);
     }
 
     * {
@@ -54,11 +67,47 @@
 
     body {
       font-family: 'Montserrat', sans-serif;
-      background-color: var(--bg);
       color: var(--text);
       line-height: 1.65;
       font-weight: 300;
+      min-height: 100vh;
       overflow-x: hidden;
+      background-color: #1A2420;
+    }
+
+    /* Большая фоновая картинка */
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      pointer-events: none;
+    }
+
+    /* Легкая вуаль поверх фона */
+    .bg-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      background: linear-gradient(
+        180deg,
+        rgba(20, 28, 25, 0.35) 0%,
+        rgba(20, 28, 25, 0.22) 50%,
+        rgba(20, 28, 25, 0.42) 100%
+      );
+      pointer-events: none;
+    }
+
+    /* Слой падающего снега */
+    #snow-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
     }
 
     h1, h2, h3, .serif {
@@ -66,29 +115,24 @@
       font-weight: 400;
     }
 
-    #snow-canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 1;
-    }
-
     .container {
       max-width: 680px;
       margin: 0 auto;
-      padding: 40px 20px 100px;
+      padding: 40px 20px 230px;
       position: relative;
-      z-index: 2;
+      z-index: 3;
     }
 
     /* Главный экран */
     .hero {
       text-align: center;
-      padding: 50px 20px 40px;
-      border-bottom: 1px solid var(--border);
+      padding: 46px 24px 38px;
+      background: var(--card);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
     }
 
     .eyebrow {
@@ -97,21 +141,21 @@
       font-size: 12px;
       color: var(--gold);
       font-weight: 500;
-      margin-bottom: 18px;
+      margin-bottom: 14px;
     }
 
     .hero h1 {
       font-size: clamp(42px, 8vw, 64px);
       line-height: 1.1;
       color: var(--accent);
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .hero .full-names {
       font-size: 15px;
       color: var(--muted);
       letter-spacing: 0.05em;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
     }
 
     .date-badge {
@@ -122,7 +166,7 @@
       font-family: 'Cormorant Garamond', serif;
       font-size: 24px;
       color: var(--text);
-      background: rgba(255, 255, 255, 0.7);
+      background: rgba(255, 255, 255, 0.85);
     }
 
     /* Обратный отсчет */
@@ -130,7 +174,7 @@
       display: flex;
       justify-content: center;
       gap: 20px;
-      margin-top: 32px;
+      margin-top: 28px;
     }
 
     .cd-item {
@@ -157,11 +201,13 @@
     /* Карточки секций */
     .section {
       background: var(--card);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       border: 1px solid var(--border);
-      border-radius: 16px;
+      border-radius: 18px;
       padding: 36px 32px;
-      margin-top: 28px;
-      box-shadow: 0 10px 30px rgba(30, 70, 58, 0.03);
+      margin-top: 24px;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.14);
     }
 
     .section h2 {
@@ -185,9 +231,9 @@
     .note-box {
       margin-top: 22px;
       padding: 16px 20px;
-      background: var(--bg);
+      background: var(--soft-bg);
       border-left: 3px solid var(--gold);
-      border-radius: 0 8px 8px 0;
+      border-radius: 0 10px 10px 0;
       font-size: 14px;
       color: var(--muted);
       text-align: left;
@@ -253,7 +299,7 @@
       border-radius: 12px;
       overflow: hidden;
       border: 1px solid var(--border);
-      background: var(--bg);
+      background: var(--soft-bg);
       text-align: center;
     }
 
@@ -317,7 +363,7 @@
     }
 
     .btn-outline {
-      background: transparent;
+      background: rgba(255, 255, 255, 0.75);
       color: var(--accent);
     }
 
@@ -349,10 +395,10 @@
       border-radius: 10px;
       font-family: 'Montserrat', sans-serif;
       font-size: 15px;
-      background: var(--bg);
+      background: var(--soft-bg);
       color: var(--text);
       outline: none;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, background 0.2s;
     }
 
     .form-control:focus {
@@ -382,7 +428,7 @@
       padding: 14px 12px;
       border: 1px solid var(--border);
       border-radius: 10px;
-      background: var(--bg);
+      background: var(--soft-bg);
       font-size: 14px;
       cursor: pointer;
       transition: all 0.2s;
@@ -399,29 +445,86 @@
       display: none;
       text-align: center;
       padding: 24px;
-      background: var(--bg);
+      background: var(--soft-bg);
       border-radius: 12px;
       color: var(--accent);
+    }
+
+    /* Фиксированная сцена сближения внизу экрана */
+    .kiss-fixed-stage {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 8px;
+      height: 210px;
+      z-index: 20;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    .kiss-cutout {
+      position: fixed;
+      bottom: 8px;
+      width: auto;
+      height: 192px;
+      max-width: 46vw;
+      object-fit: contain;
+      object-position: bottom center;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.35));
+      will-change: transform;
+    }
+
+    #groom-img {
+      left: 0;
+      transform-origin: bottom center;
+    }
+
+    #bride-img {
+      right: 0;
+      transform-origin: bottom center;
+    }
+
+    .kiss-spark {
+      position: fixed;
+      bottom: 145px;
+      left: 50%;
+      transform: translateX(-50%) translateY(8px) scale(0.7);
+      font-size: 26px;
+      color: #F6DFB3;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
+      opacity: 0;
+      transition: opacity 0.22s ease, transform 0.22s ease;
+      pointer-events: none;
+      z-index: 21;
+    }
+
+    .kiss-spark.active {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-6px) scale(1.15);
     }
 
     /* Плавающая кнопка музыки */
     .music-btn {
       position: fixed;
-      bottom: 22px;
-      right: 22px;
+      top: 20px;
+      right: 20px;
       z-index: 50;
       background: var(--accent);
       color: #fff;
       border: none;
       border-radius: 50px;
-      padding: 12px 20px;
+      padding: 11px 18px;
       display: flex;
       align-items: center;
       gap: 10px;
       font-family: 'Montserrat', sans-serif;
       font-size: 13px;
       cursor: pointer;
-      box-shadow: 0 8px 24px rgba(30, 70, 58, 0.25);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
       transition: transform 0.2s, background 0.2s;
     }
 
@@ -456,7 +559,7 @@
       100% { height: 14px; }
     }
 
-    /* Модальное окно для увеличения карты */
+    /* Модальное окно для карты */
     .modal {
       display: none;
       position: fixed;
@@ -476,14 +579,20 @@
     }
 
     @media (max-width: 520px) {
-      .section { padding: 28px 20px; }
+      .section, .hero { padding: 28px 20px; }
       .radio-group { grid-template-columns: 1fr; }
       .tl-row { flex-direction: column; gap: 4px; }
+      .kiss-fixed-stage { height: 175px; }
+      .kiss-cutout { height: 156px; bottom: 6px; }
+      .kiss-spark { bottom: 120px; font-size: 22px; }
+      .music-btn { top: 14px; right: 14px; padding: 10px 15px; }
     }
   </style>
 </head>
 <body>
 
+  <div class="bg-layer" id="bg-layer"></div>
+  <div class="bg-overlay"></div>
   <canvas id="snow-canvas"></canvas>
 
   <div class="container">
@@ -507,7 +616,7 @@
       <div class="invite-text">
         <p>26 декабря мы официально станем семьёй. Мы решили отметить этот день камерно и без суеты — проведём только торжественную регистрацию в Царицыно и небольшую прогулку с фотографиями сразу после.</p>
         <p>Если у вас будет время и желание разделить с нами этот момент, обняться и сделать пару кадров на память — мы будем очень рады вас видеть!</p>
-        
+
         <div class="note-box">
           <strong>Важно:</strong> банкета и застолья не планируется. Пожалуйста, не беспокойтесь о подарках и цветах — для нас главным подарком станет само ваше присутствие. Приходите исключительно по желанию и без всяких обязательств.
         </div>
@@ -569,16 +678,14 @@
       </div>
     </section>
 
-    <!-- Анкета гостя (Netlify Forms) -->
+    <!-- Анкета гостя -->
     <section class="section">
       <h2>Подскажите, ждать ли вас?</h2>
       <p style="text-align: center; font-size: 14px; color: var(--muted); margin-bottom: 20px;">
         Отметьтесь, пожалуйста, чтобы мы примерно понимали, сколько нас соберётся.
       </p>
 
-      <form class="rsvp-form" name="wedding-rsvp" method="POST" data-netlify="true" id="rsvp-form">
-        <input type="hidden" name="form-name" value="wedding-rsvp" />
-        
+      <form class="rsvp-form" id="rsvp-form">
         <div class="form-group">
           <label for="guest-name">Ваше имя и фамилия (или имена, если будете парой)</label>
           <input class="form-control" type="text" id="guest-name" name="name" placeholder="Например: Иван Иванов" required />
@@ -613,6 +720,13 @@
     </section>
   </div>
 
+  <!-- Фиксированные персонажи на прозрачном фоне внизу экрана -->
+  <div class="kiss-fixed-stage" id="kiss-stage" aria-hidden="true">
+    <img id="groom-img" class="kiss-cutout" src="" alt="" />
+    <div class="kiss-spark" id="kiss-spark">♥</div>
+    <img id="bride-img" class="kiss-cutout" src="" alt="" />
+  </div>
+
   <!-- Аудиоплеер -->
   <audio id="bg-music" loop preload="auto"></audio>
   <button class="music-btn" id="music-toggle" title="Включить или выключить музыку">
@@ -641,6 +755,11 @@
     document.getElementById('loc-address').textContent = CONFIG.locationAddress;
     document.getElementById('yandex-link').href = CONFIG.yandexMapsUrl;
 
+    const bgLayer = document.getElementById('bg-layer');
+    if (CONFIG.bgImageFile) {
+      bgLayer.style.backgroundImage = `url("${CONFIG.bgImageFile}")`;
+    }
+
     // 2. Персонализация по параметру ?guest=Имя в ссылке
     const urlParams = new URLSearchParams(window.location.search);
     const guestParam = urlParams.get('guest');
@@ -660,7 +779,6 @@
       mapFallback.style.display = 'block';
     };
 
-    // Увеличение схемы по клику
     const modal = document.getElementById('img-modal');
     const modalImg = document.getElementById('modal-img');
     mapImg.addEventListener('click', () => {
@@ -721,8 +839,8 @@
         'VERSION:2.0',
         'PRODID:-//Wedding Invite//RU',
         'BEGIN:VEVENT',
-        'DTSTART:20261226T084500Z', // 11:45 MSK (UTC+3)
-        'DTEND:20261226T100000Z',   // 13:00 MSK (UTC+3)
+        'DTSTART:20261226T084500Z',
+        'DTEND:20261226T100000Z',
         'SUMMARY:Роспись: Никита и Анна',
         'DESCRIPTION:Встреча гостей в 11:45, роспись в 12:00. Царицыно, Оперный дом.',
         'LOCATION:Москва, ул. Дольская, д. 1, стр. 6 (Царицыно, Оперный дом)',
@@ -737,28 +855,38 @@
       link.click();
     });
 
-    // 7. Отправка формы без перезагрузки страницы (совместимо с Netlify Forms)
+    // 7. Отправка формы в Google Таблицу
     const form = document.getElementById('rsvp-form');
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const formData = new FormData(form);
-      fetch('/', {
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Отправляем...';
+
+      const payload = {
+        name: document.getElementById('guest-name').value,
+        attendance: form.querySelector('input[name="attendance"]:checked').value,
+        comment: document.getElementById('guest-note').value
+      };
+
+      fetch(CONFIG.googleScriptUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(formData).toString()
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       })
       .then(() => {
         form.style.display = 'none';
         document.getElementById('form-success').style.display = 'block';
       })
       .catch(() => {
-        // Если открыто локально на компьютере без Netlify
-        form.style.display = 'none';
-        document.getElementById('form-success').style.display = 'block';
+        alert('Произошла ошибка при отправке. Попробуйте ещё раз или напишите нам лично.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Отправить ответ';
       });
     });
 
-    // 8. Анимация легкого снега на фоне
+    // 8. Анимация падающего снега поверх фона
     if (CONFIG.enableSnow) {
       const canvas = document.getElementById('snow-canvas');
       const ctx = canvas.getContext('2d');
@@ -770,25 +898,23 @@
         height = canvas.height = window.innerHeight;
       });
 
-      const flakes = Array.from({ length: 45 }, () => ({
+      const flakes = Array.from({ length: 55 }, () => ({
         x: Math.random() * width,
         y: Math.random() * height,
-        r: Math.random() * 2.5 + 1,
-        d: Math.random() * 0.6 + 0.2,
-        drift: Math.random() * 0.5 - 0.25
+        r: Math.random() * 2.8 + 1,
+        d: Math.random() * 0.7 + 0.25,
+        drift: Math.random() * 0.5 - 0.25,
+        opacity: Math.random() * 0.45 + 0.35
       }));
 
       function drawSnow() {
         ctx.clearRect(0, 0, width, height);
-        ctx.fillStyle = 'rgba(184, 151, 104, 0.35)'; // Легкие золотисто-снежные точки
-        ctx.beginPath();
         for (const f of flakes) {
-          ctx.moveTo(f.x, f.y);
+          ctx.fillStyle = `rgba(255, 255, 255, ${f.opacity})`;
+          ctx.beginPath();
           ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
-        }
-        ctx.fill();
+          ctx.fill();
 
-        for (const f of flakes) {
           f.y += f.d;
           f.x += f.drift;
           if (f.y > height) { f.y = -5; f.x = Math.random() * width; }
@@ -799,6 +925,61 @@
       }
       drawSnow();
     }
+
+    // 9. Сближение двух персонажей на прозрачном фоне внизу экрана до самого конца скролла
+    const groomImg = document.getElementById('groom-img');
+    const brideImg = document.getElementById('bride-img');
+    const kissSpark = document.getElementById('kiss-spark');
+
+    groomImg.src = CONFIG.groomImageFile;
+    brideImg.src = CONFIG.brideImageFile;
+    groomImg.onerror = () => { groomImg.style.visibility = 'hidden'; };
+    brideImg.onerror = () => { brideImg.style.visibility = 'hidden'; };
+
+    function applyCharacterSizes() {
+      const isMobile = window.innerWidth <= 520;
+      groomImg.style.height = (isMobile ? CONFIG.groomHeightMobile : CONFIG.groomHeightDesktop) + 'px';
+      brideImg.style.height = (isMobile ? CONFIG.brideHeightMobile : CONFIG.brideHeightDesktop) + 'px';
+    }
+
+    function updateKissFixedOnScroll() {
+      const docEl = document.documentElement;
+      const maxScroll = Math.max(1, docEl.scrollHeight - window.innerHeight);
+      const scrollY = window.scrollY || window.pageYOffset || 0;
+
+      // Соприкосновение происходит почти в самом конце страницы (на ~96% прокрутки)
+      const rawProgress = scrollY / (maxScroll * 0.96);
+      const progress = Math.max(0, Math.min(1, rawProgress));
+
+      const vw = window.innerWidth;
+      const groomWidth = groomImg.getBoundingClientRect().width || (vw * 0.25);
+      const brideWidth = brideImg.getBoundingClientRect().width || (vw * 0.25);
+
+      // На старте (progress = 0): левый у левого края (x = 0), правый у правого края (x = 0)
+      // В конце (progress = 1): центры сдвигаются к середине экрана (vw / 2) с легким заходом для соприкосновения
+      const groomTargetX = Math.max(0, (vw / 2) - groomWidth * 0.88);
+      const brideTargetX = Math.max(0, (vw / 2) - brideWidth * 0.88);
+
+      const currentGroomX = groomTargetX * progress;
+      const currentBrideX = brideTargetX * progress;
+
+      groomImg.style.transform = `translateX(${currentGroomX.toFixed(1)}px)`;
+      brideImg.style.transform = `translateX(${(-currentBrideX).toFixed(1)}px)`;
+
+      if (progress >= 0.94) {
+        kissSpark.classList.add('active');
+      } else {
+        kissSpark.classList.remove('active');
+      }
+    }
+
+    applyCharacterSizes();
+    window.addEventListener('scroll', updateKissFixedOnScroll, { passive: true });
+    window.addEventListener('resize', () => {
+      applyCharacterSizes();
+      updateKissFixedOnScroll();
+    });
+    updateKissFixedOnScroll();
   </script>
 </body>
 </html>
